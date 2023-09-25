@@ -6,4 +6,8 @@ const bcrypt = require('bcrypt')
 
 const app = express()
 
-app.listen(3333)
+app.get('/', (req, res) => {
+    res.status(200).json({msg: "Bem vindo a API"})
+})
+
+app.listen(3000)
