@@ -136,6 +136,40 @@ app.post('customer/register', async (req, res) =>{
 
 })
 
+app.post("/customer", async(res, res) =>{
+    const { email, password } = req.body
+
+    if(!email || !password){
+        return res.status(422).json({message: "Fill in the email and password field to log in"})
+    }
+
+    const customer = Customer.findById({email: email})
+
+    if(!user){
+        return res.status(422).json({message: "The digital email is not registered to any customer"})
+    }
+
+    const checkCustomerPassword = await bcrypt.compare(password, customer.password)
+    if(!checkCustomerPassword){
+        return res.status(400).json({message: "The password entered is incorrect"})
+    }
+
+    try{
+
+        const secret = process.env.SECRET
+        const token = jwt.sign({
+            id: customer.id,
+        }, secret)
+
+        return res.status(200).json({
+            message: "Customer login successfuly", token
+        })
+
+    }catch(error){
+        res.status(500).json({message: error})
+    }
+})
+
 app.post("/user", async(req, res) => {
     const { email, password } = req.body
 
