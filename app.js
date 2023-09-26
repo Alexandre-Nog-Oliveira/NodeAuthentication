@@ -10,8 +10,40 @@ app.use(express.json())
 const User = require('./models/User')
 
 app.get('/', (req, res) => {
-    res.status(200).json({msg: "Bem vindo a API"})
+    res.status(200).json({msg: "Welcome to API"})
 })
+
+app.get('/users/:id', checkToken, async(req, res) => {
+    const id = req.params.id
+
+    const user = await User.findById(id, '-password')
+
+    if(!user){
+        return res.status(400).json({message: "User not found"})
+    }
+
+    return res.status(200).json({user})
+    
+})
+
+function checkToken(req, res, next ){
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(" ")[1]
+
+    if(!token){
+        return res.status(401).json({message: "Access denied"})
+    }
+
+    try{
+        const secret = process.env.SECRET
+
+        jwt.verify(token, secret)
+
+        next()
+    }catch(error){
+        return res.statusd(400).json({message: "Invalid token"})
+    }
+}
 
 
 app.post('/user/register', async (req, res) => {
