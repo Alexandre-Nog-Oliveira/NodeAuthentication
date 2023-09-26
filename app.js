@@ -8,6 +8,7 @@ const app = express()
 app.use(express.json())
 
 const User = require('./models/User')
+const Customer = require('./models/Customer')
 
 app.get('/', (req, res) => {
     res.status(200).json({msg: "Welcome to API"})
@@ -78,6 +79,57 @@ app.post('/user/register', async (req, res) => {
     try {
         await user.save()
         return res.status(200).json({message: "Registered user"})
+    }catch(error){
+        res.status(500).json({message: error})
+    }
+
+})
+
+
+app.post('customer/register', async (req, res) =>{
+    const { name, email, password, confirmpassword, dateofbirth, document} = req.body
+
+    if(!name || !email || ! password || !dateofbirth || !document ){
+        return res.status(402).json({message: "Missing field, check if you left any fields blank"})
+    } else if(password !== confirmpassword){
+
+        return res.status(422).json({message: "Passwords don't match"})
+        
+    }
+
+    const CustomerExistsByEmmail = await Customer.findOne({
+        email:email,
+    })
+
+    const CustomerExistsByDocument = await Customer.findOne({ 
+        document: document
+    })
+
+    if(CustomerExistsByEmmail){
+        res.status(422).json({message: "Email already registered, use another email"})
+    } else if(CustomerExistsByDocument){
+        res.status(422).json({
+            message: "Document already registered for another user"
+        })
+    }
+
+
+    const salt = await bcrypt.genSalt(12)
+    const CustomerPasswordHash = await bcrypt.hash(password, salt)
+
+    const customer = new Customer({
+        name,
+        email, 
+        dateofbirth,
+        document,
+        password : CustomerPasswordHash
+    })
+
+    try{
+
+        await customer.save()
+        res.status(201).json({message: "Customer created"})
+
     }catch(error){
         res.status(500).json({message: error})
     }
