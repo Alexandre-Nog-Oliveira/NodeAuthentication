@@ -40,7 +40,7 @@ app.post('/user/register', async (req, res) => {
     const user = new User({
         name,
         email,
-        password,
+        password: passwordHash,
     })
 
     try {
@@ -50,8 +50,39 @@ app.post('/user/register', async (req, res) => {
         res.status(500).json({message: error})
     }
 
-    
+})
 
+app.post("/user", async(req, res) => {
+    const { email, password } = req.body
+
+    if(!email || !password){
+        return res.status(422).json({message: "Fill in the email and password field to log in"})
+    }
+
+    const user = await User.findOne({ email:email })
+
+    if(!user){
+        return res.status(422).json({message: "The digital email is not registered to any user"})
+    }
+
+    const checkPassword = await bcrypt.compare(password, user.password)
+    if(!checkPassword){
+        return res.status(400).json({message: "The password entered is incorrect"})
+    }
+
+    try{
+
+        const secret = process.env.SECRET
+
+        const token = jwt.sign({
+            id: user.id,
+        }, secret,)
+
+        res.status(200).json({message: "login successfully", token})
+
+    }catch(erro){
+        res.status(500).json({message: error})
+    }
 })
 
 const dbUser = process.env.DB_USER
